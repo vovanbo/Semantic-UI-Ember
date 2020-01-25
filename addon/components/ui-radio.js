@@ -1,30 +1,32 @@
-import Ember from 'ember';
+import Component from '@ember/component';
 import Checkbox from '../mixins/checkbox';
 import isPromise from 'ember-promise-utils/utils/is-promise';
 import isFulfilled from 'ember-promise-utils/utils/is-fulfilled';
 import getPromiseContent from 'ember-promise-utils/utils/get-promise-content';
 import PromiseResolver from 'ember-promise-utils/mixins/promise-resolver';
 import layout from '../templates/components/ui-radio';
+import { isBlank } from '@ember/utils';
+import { hash } from 'rsvp';
 
-export default Ember.Component.extend(Checkbox, PromiseResolver, {
+export default Component.extend(Checkbox, PromiseResolver, {
   layout,
   type: 'radio',
   classNames: ['radio'],
-  ignorableAttrs: ['checked', 'label', 'disabled', 'value', 'current'],
 
   init() {
     this._super(...arguments);
+    this.ignorableAttrs = this.ignorableAttrs || ['checked', 'label', 'disabled', 'value', 'current'];
 
-    if (Ember.isBlank(this.get('name'))) {
+    if (isBlank(this.get('name'))) {
       this.set('name', 'default');
-      Ember.Logger.warn("The required component parameter of 'name' was not passed into the ui-radio component");
+      console.warn("The required component parameter of 'name' was not passed into the ui-radio component");
     }
   },
 
   // Internal wrapper for onchange, to pass through checked
   _onChange() {
     let value = this.get('value');
-    return this.attrs.onChange(value, this);
+    return this.get('onChange')(value, this);
   },
 
   didInitSemantic() {
@@ -49,7 +51,7 @@ export default Ember.Component.extend(Checkbox, PromiseResolver, {
       // for the hash to resolve each time
       if (isPromise(value)) {
         if (!isFulfilled(value)) {
-          return this.resolvePromise(Ember.RSVP.hash({ value, current }), this._checkValueAndCurrent);
+          return this.resolvePromise(hash({ value, current }), this._checkValueAndCurrent);
         } else {
           value = getPromiseContent(value);
         }
@@ -57,7 +59,7 @@ export default Ember.Component.extend(Checkbox, PromiseResolver, {
 
       if (isPromise(current)) {
         if (!isFulfilled(current)) {
-          return this.resolvePromise(Ember.RSVP.hash({ value, current }), this._checkValueAndCurrent);
+          return this.resolvePromise(hash({ value, current }), this._checkValueAndCurrent);
         } else {
           current = getPromiseContent(current);
         }

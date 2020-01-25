@@ -1,17 +1,28 @@
-import Ember from 'ember';
+import Mixin from '@ember/object/mixin';
+import { isBlank, isEqual, isPresent } from '@ember/utils';
 import Semantic from '../semantic';
-import $ from 'jquery';
+import jQuery from 'jquery';
+import { A } from '@ember/array';
+import { get } from '@ember/object';
+import { camelize, isHTMLSafe } from '@ember/string';
+import { run } from '@ember/runloop';
+import { inject as service } from '@ember/service';
+import { reads } from '@ember/object/computed';
+
 
 const EMBER_ATTRS = ['class', 'classNameBindings', 'classNames', 'tagName'];
 const HTML_ATTRS = ['id', 'name', 'readonly', 'autofocus', 'tabindex', 'title'];
 const CUSTOM_ATTRS = ['onElement'];
 
-Semantic.BaseMixin = Ember.Mixin.create({
+Semantic.BaseMixin = Mixin.create({
   /// Internal Variables
   _initialized: false,
   _bindableAttrs: null,
   _settableAttrs: null,
   _ignorableAttrs: null,
+
+  fastboot: service(),
+  isFastBoot: reads('fastboot.isFastBoot'),
 
   attributeBindings: [
     'autofocus',
@@ -23,12 +34,13 @@ Semantic.BaseMixin = Ember.Mixin.create({
   init() {
     this._super(...arguments);
 
-    if (Ember.isBlank(this.getSemanticModuleName())) {
-      return Ember.Logger.error('A module was not declared on semantic extended type');
+    if (isBlank(this.getSemanticModuleName())) {
+      console.error('A module was not declared on semantic extended type');
+      return
     }
     this.set('_initialized', false);
-    this.set('_bindableAttrs', Ember.A());
-    this.set('_settableAttrs', Ember.A());
+    this.set('_bindableAttrs', A());
+    this.set('_settableAttrs', A());
     this.set('_ignorableAttrs', this.getSemanticIgnorableAttrs());
   },
 
@@ -37,8 +49,8 @@ Semantic.BaseMixin = Ember.Mixin.create({
     this.initSemanticModule();
 
     // Get the modules settable and gettable properties.
-    let settableProperties = Ember.A(Object.keys(this.execute('internal', 'set')));
-    let gettableProperties = Ember.A(Object.keys(this.execute('internal', 'get')));
+    let settableProperties = A(Object.keys(this.execute('internal', 'set')));
+    let gettableProperties = A(Object.keys(this.execute('internal', 'get')));
 
     for (let key in this.get('attrs')) {
       // If it has a settable and gettable attribute, then its bindable
@@ -78,17 +90,17 @@ Semantic.BaseMixin = Ember.Mixin.create({
   /// Semantic Hooks
   getSemanticIgnorableAttrs() {
     let ignorableAttrs = [];
-    if (Ember.isPresent(this.get('ignorableAttrs'))) {
+    if (isPresent(this.get('ignorableAttrs'))) {
       ignorableAttrs = ignorableAttrs.concat(this.get('ignorableAttrs'));
     }
     ignorableAttrs = ignorableAttrs.concat(EMBER_ATTRS);
     ignorableAttrs = ignorableAttrs.concat(HTML_ATTRS);
     ignorableAttrs = ignorableAttrs.concat(CUSTOM_ATTRS);
-    return Ember.A(ignorableAttrs);
+    return A(ignorableAttrs);
   },
 
   getSemanticScope() {
-    if (Ember.isPresent(this.get('onElement'))) {
+    if (isPresent(this.get('onElement'))) {
       return this.$(this.get('onElement'));
     }
     return this.$();
@@ -99,7 +111,7 @@ Semantic.BaseMixin = Ember.Mixin.create({
   },
 
   getSemanticModule() {
-    if (this._isFastBoot()) {
+    if (this.isFastBoot) {
       return;
     }
     let selector = this.getSemanticScope();
@@ -113,11 +125,11 @@ Semantic.BaseMixin = Ember.Mixin.create({
   },
 
   getSemanticModuleGlobal() {
-    if (this._isFastBoot()) {
+    if (this.isFastBoot) {
       return;
     }
     let moduleName = this.getSemanticModuleName();
-    return $.fn[moduleName];
+    return jQuery.fn[moduleName];
   },
 
   willInitSemantic(settings) { // eslint-disable-line no-unused-vars
@@ -125,14 +137,14 @@ Semantic.BaseMixin = Ember.Mixin.create({
   },
 
   initSemanticModule() {
-    if (this._isFastBoot()) {
+    if (this.isFastBoot) {
       return;
     }
     let module = this.getSemanticModule();
     if (module) {
       module.call(this.getSemanticScope(), this._settings());
     } else {
-      Ember.Logger.error(`The Semantic UI module ${this.getSemanticModuleName()} was not found and did not initialize`);
+      console.error(`The Semantic UI module ${this.getSemanticModuleName()} was not found and did not initialize`);
     }
   },
 
@@ -151,19 +163,19 @@ Semantic.BaseMixin = Ember.Mixin.create({
   areAttrValuesEqual(attrName, attrValue, moduleValue) {
     return attrValue === moduleValue ||
            this._stringCompareIfPossible(attrValue) === this._stringCompareIfPossible(moduleValue) ||
-           Ember.isEqual(attrValue, moduleValue);
+           isEqual(attrValue, moduleValue);
   },
 
   // Semantic Helper Methods
   execute() {
-    if (this._isFastBoot()) {
+    if (this.isFastBoot) {
       return;
     }
     let module = this.getSemanticModule();
     if (module) {
       return module.apply(this.getSemanticScope(), arguments);
     }
-    Ember.Logger.warn("The execute method was called, but the Semantic-UI module didn't exist.");
+    console.warn("The execute method was called, but the Semantic-UI module didn't exist.");
   },
 
   actions: {
@@ -176,15 +188,15 @@ Semantic.BaseMixin = Ember.Mixin.create({
   _getAttrValue(name) {
     let value = this.get(`attrs.${name}`);
 
-    if (Ember.isBlank(value)) {
+    if (isBlank(value)) {
       return value;
     }
 
     // if its a mutable object, get the actual value
     if (typeof value === 'object') {
-      let objectKeys = Ember.A(Object.keys(value));
+      let objectKeys = A(Object.keys(value));
       if (objectKeys.any((objectkey) => objectkey.indexOf('MUTABLE_CELL') >= 0)) {
-        value = Ember.get(value, 'value');
+        value = get(value, 'value');
       }
     }
 
@@ -196,7 +208,7 @@ Semantic.BaseMixin = Ember.Mixin.create({
 
     let moduleGlobal = this.getSemanticModuleGlobal();
     if (!moduleGlobal) {
-      Ember.Logger.error(`Unable to find jQuery Semantic UI module: ${moduleName}`);
+      console.error(`Unable to find jQuery Semantic UI module: ${moduleName}`);
       return;
     }
 
@@ -210,7 +222,7 @@ Semantic.BaseMixin = Ember.Mixin.create({
       let value = this._getAttrValue(key);
 
       if (!this._hasOwnProperty(moduleGlobal.settings, key)) {
-        if (!this.get('_ignorableAttrs').includes(key) && !this.get('_ignorableAttrs').includes(Ember.String.camelize(key))) {
+        if (!this.get('_ignorableAttrs').includes(key) && !this.get('_ignorableAttrs').includes(camelize(key))) {
           // TODO: Add better ember keys here
           // Ember.Logger.debug(`You passed in the property '${key}', but a setting doesn't exist on the Semantic UI module: ${moduleName}`);
         }
@@ -229,10 +241,10 @@ Semantic.BaseMixin = Ember.Mixin.create({
     for (let key in custom) {
       let value = custom[key];
       if (typeof value === 'function') {
-        custom[key] = Ember.run.bind(this, this._updateFunctionWithParameters(key, value));
+        custom[key] = run.bind(this, this._updateFunctionWithParameters(key, value));
       }
       if (typeof value === 'object') {
-        if (Ember.String.isHTMLSafe(value)) {
+        if (isHTMLSafe(value)) {
           custom[key] = this._unwrapHTMLSafe(value);
         }
       }
@@ -281,7 +293,7 @@ Semantic.BaseMixin = Ember.Mixin.create({
   },
 
   _unwrapHTMLSafe(value) {
-    if (Ember.String.isHTMLSafe(value)) {
+    if (isHTMLSafe(value)) {
       return value.toString();
     }
     return value;
@@ -298,12 +310,6 @@ Semantic.BaseMixin = Ember.Mixin.create({
 
     return false;
   },
-
-  _isFastBoot() {
-    let owner = Ember.getOwner(this);
-    let fastboot = owner.lookup('service:fastboot');
-    return fastboot && fastboot.get('isFastBoot');
-  }
 });
 
 export default Semantic.BaseMixin;

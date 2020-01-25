@@ -1,17 +1,15 @@
-import Ember from 'ember';
+import Mixin from '@ember/object/mixin';
 import Base from './base';
 
 /*
  * Checkbox Component Mixin
  */
-var CheckboxMixin = Ember.Mixin.create(Base, {
+var CheckboxMixin = Mixin.create(Base, {
   module: 'checkbox',
   classNames: ['ui', 'checkbox'],
 
   willInitSemantic(settings) {
-    let owner = Ember.getOwner(this);
-    let fastboot = owner.lookup('service:fastboot');
-    if (fastboot && fastboot.get('isFastBoot')) {
+    if (this.isFastBoot) {
       return;
     }
     this._super(...arguments);
@@ -19,7 +17,7 @@ var CheckboxMixin = Ember.Mixin.create(Base, {
       // Checkbox and radio both have an implementation for this
       settings.onChange = this.get('_onChange');
     }
-    if (this._hasOwnProperty(this.attrs, 'readonly') || this.get('readonly') != null) {
+    if (this.get('readonly') != null) {
       this.$().toggleClass('read-only', this.get('readonly'));
     }
   },

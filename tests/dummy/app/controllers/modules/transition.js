@@ -1,10 +1,10 @@
-/* global $ */
-import Ember from 'ember';
+import Controller from '@ember/controller';
+import jQuery from 'jquery';
 
-export default Ember.Controller.extend({
+export default Controller.extend({
   actions: {
     transition: function() {
-      $('img').transition('horizontal flip', '500ms');
+      jQuery('img').transition('horizontal flip', '500ms');
     }
   }
 });

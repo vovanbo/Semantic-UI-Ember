@@ -1,10 +1,10 @@
-import Ember from 'ember';
-import $ from 'jquery';
+import Controller from '@ember/controller';
+import jQuery from 'jquery';
 
-export default Ember.Controller.extend({
+export default Controller.extend({
   actions: {
     openModal: function(name) {
-      $('.ui.' + name + '.modal').modal('show');
+      jQuery('.ui.' + name + '.modal').modal('show');
     },
 
     approveModal: function(element, component) {

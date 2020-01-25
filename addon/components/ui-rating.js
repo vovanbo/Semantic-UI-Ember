@@ -1,12 +1,16 @@
-import Ember from 'ember';
+import Component from '@ember/component';
 import Base from '../mixins/base';
 import layout from '../templates/components/ui-rating';
 
-export default Ember.Component.extend(Base, {
+export default Component.extend(Base, {
   layout,
   module: 'rating',
   classNames: ['ui', 'rating'],
-  ignorableAttrs: ['rating'],
+
+  init() {
+    this._super(...arguments);
+    this.ignorableAttrs = this.ignorableAttrs || ['rating'];
+  },
 
   willInitSemantic(settings) {
     this._super(...arguments);

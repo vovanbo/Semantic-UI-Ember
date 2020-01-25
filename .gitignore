@@ -21,4 +21,5 @@ testem.log
 /semantic/*
 !/semantic/src/site/*
 !/semantic/src/theme.config
-        
+
+/*.ember-try

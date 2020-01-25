@@ -1,8 +1,8 @@
-import Ember from 'ember';
+import Component from '@ember/component';
 import Base from '../mixins/base';
 import layout from '../templates/components/ui-popup';
 
-export default Ember.Component.extend(Base, {
+export default Component.extend(Base, {
   layout,
   module: 'popup',
 
@@ -11,7 +11,7 @@ export default Ember.Component.extend(Base, {
     let possibleAttrs = ['content', 'title', 'html'];
     for (let i = 0; i < possibleAttrs.length; i++) {
       let possibleAttr = possibleAttrs[i];
-      if (this._hasOwnProperty(this.attrs, possibleAttr) || this.get(possibleAttr) != null) {
+      if (this.get(possibleAttr) != null) {
         this.get('_settableAttrs').addObject(possibleAttr);
       }
     }

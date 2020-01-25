@@ -6,7 +6,7 @@ module.exports = function(defaults) {
   const app = new EmberAddon(defaults, {
     // Add options here
     'ember-cli-babel': {
-      includePolyfill: false
+      includePolyfill: true
     }
   });
 

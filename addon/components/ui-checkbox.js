@@ -1,15 +1,19 @@
-import Ember from 'ember';
+import Component from '@ember/component';
 import Checkbox from '../mixins/checkbox';
 import layout from '../templates/components/ui-checkbox';
 
-export default Ember.Component.extend(Checkbox, {
+export default Component.extend(Checkbox, {
   layout,
   type: 'checkbox',
-  ignorableAttrs: ['checked', 'label', 'disabled'],
+
+  init() {
+    this._super(...arguments);
+    this.ignorableAttrs = this.ignorableAttrs || ['checked', 'label', 'disabled'];
+  },
 
   // Internal wrapper for onchange, to pass through checked
   _onChange() {
     let checked = this.execute('is checked');
-    return this.attrs.onChange(checked, this);
+    return this.get('onChange')(checked, this);
   }
 });
